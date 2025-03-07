@@ -3,9 +3,15 @@ import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken"
 import { ApiErrors } from "../utils/ApiErrors.js";
 
-export const verifyJWT = asyncHandler ( async (req,res) => {
+export const verifyJWT = asyncHandler ( async (req,res,next) => {
     try {
-        const token = req.cookie?.accessToken
+        let token = req.cookies?.accessToken 
+
+         // If no token in cookies, check Authorization header
+        //  if (!token && req.headers.authorization?.startsWith("Bearer")) {
+        //     token = req.headers.authorization.split(" ")[1];
+        // }
+
         if (!token) {
             throw new ApiErrors(400,"Unauthorized request")
         }

@@ -53,13 +53,13 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  if (!(username || email)) {
+  const { username, password } = req.body;
+  if (!(username || password)) {
     throw new ApiErrors(401, "Email or Username is required");
   }
 
   const user = await User.findOne({
-    $or: [{ username: username }, { email: email }],
+    $or: [{ username: username }, { password: password }],
   });
 
   if (!user) {
@@ -83,7 +83,6 @@ const login = asyncHandler(async (req, res) => {
     bio: user.bio,
     followers: user.followers,
     following: user.following,
-    posts: populatedPosts,
   };
 
   const option = {
@@ -101,22 +100,24 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
+
+  if (!req.user || !req.user._id) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
+
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $unset: {
+      $set: {
         refreshToken: undefined,
       },
     },
-    {
-      new: true,
-    }
   );
 
   const option = {
     httpOnly: true,
     secure: true,
-    maxAge: 0,
+    sameSite: "strict",
   };
 
   res
@@ -128,7 +129,7 @@ const logout = asyncHandler(async (req, res) => {
 
 const getProfile = asyncHandler(async (req, res) => {
   const userId = req.params.id;
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).select("-password");
   return res
     .status(200)
     .json(new ApiResponse(200, user, "User Profile fetched successfully"));
@@ -146,7 +147,7 @@ const editProfile = asyncHandler(async (req, res) => {
       cloudresponse = await cloudinary.uploader.upload(fileUri);
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("-password");
     if (!user) {
       throw new ApiErrors(401, "User not found");
     }
@@ -231,7 +232,6 @@ const followOrUnfollow = asyncHandler(async (req, res) => {
     console.log(error);
   }
 });
-
 
 export {
   register,

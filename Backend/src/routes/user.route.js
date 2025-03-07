@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.route("/register").post(register)
 router.route("/login").post(login)
-router.route("/logout").get(logout)
+router.route("/logout").get(verifyJWT,logout)
 router.route("/:id/profile").get(verifyJWT,getProfile)
 router.route("/profile/edit").post(verifyJWT,upload.single('profilePicture'),editProfile)
 router.route("/suggested").get(verifyJWT,getSuggestedUsers)
