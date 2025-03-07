@@ -163,6 +163,82 @@ const editProfile = asyncHandler(async (req, res) => {
   }
 });
 
+const getSuggestedUsers = asyncHandler(async (req, res) => {
+  const suggestedUsers = await User.find({ _id: { $ne: req.id } }).select(
+    "-password"
+  );
+  if (!suggestedUsers) {
+    throw new ApiErrors(401, "Currently do not suggest any user");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(201, suggestedUsers, "Suggested users fetched"));
+});
+
+const followOrUnfollow = asyncHandler(async (req, res) => {
+  try {
+    const myAccount = req.id; // My logged in account
+    const otherAccount = req.params.id; // Account that i want to follow or unfollow
+
+    if (myAccount === otherAccount) {
+      throw new ApiErrors(401, "You can not follow yourself");
+    }
+
+    const user = await User.findById(myAccount);
+    const targetUser = await User.findById(otherAccount);
+
+    if (!user || !targetUser) {
+      throw new ApiErrors(400, "User not found");
+    }
+
+    // check if i already follow that targetUser
+
+    const isFollowing = user.following.includes(otherAccount);
+
+    if (isFollowing) {
+      // Unfollow logic
+      await Promise.all([
+        User.updateOne(
+          { _id: myAccount },
+          { $pull: { following: otherAccount } }
+        ),
+        User.updateOne(
+          { _id: otherAccount },
+          { $pull: { followers: myAccount } }
+        ),
+      ]);
+      return res
+        .status(200)
+        .json(new ApiResponse(201, {}, "Unfollowed successfully"));
+    } else {
+      // Follow logic
+      await Promise.all([
+        User.updateOne(
+          { _id: myAccount },
+          { $push: { following: otherAccount } }
+        ),
+        User.updateOne(
+          { _id: otherAccount },
+          { $push: { followers: myAccount } }
+        ),
+      ]);
+      return res
+        .status(200)
+        .json(new ApiResponse(201, {}, "Followed successfully"));
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 
-export { register, login, logout, getProfile, editProfile };
+export {
+  register,
+  login,
+  logout,
+  getProfile,
+  editProfile,
+  getSuggestedUsers,
+  followOrUnfollow,
+};
