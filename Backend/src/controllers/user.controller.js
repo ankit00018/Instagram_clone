@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiErrors } from "../utils/ApiErrors.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import getDataUri from "../utils/dataUri.js";
 
 const generateAccessTokenAndRefreshToken = async (userid) => {
   try {
@@ -125,4 +126,43 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"));
 });
 
-export { register, login, logout};
+const getProfile = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
+  const user = await User.findById(userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User Profile fetched successfully"));
+});
+
+const editProfile = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user;
+    const { bio, gender } = req.body;
+    const profilePicture = req.file;
+
+    let cloudresponse;
+    if (profilePicture) {
+      const fileUri = getDataUri(profilePicture);
+      cloudresponse = await cloudinary.uploader.upload(fileUri);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiErrors(401, "User not found");
+    }
+
+    if (bio) user.bio = bio;
+    if (gender) user.gender = gender;
+    if (profilePicture) user.profilePicture = cloudresponse.secure_url;
+
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(201, user, "Profile updated"));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
+
+export { register, login, logout, getProfile, editProfile };
