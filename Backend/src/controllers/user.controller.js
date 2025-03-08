@@ -179,6 +179,11 @@ const getSuggestedUsers = asyncHandler(async (req, res) => {
 
 const followOrUnfollow = asyncHandler(async (req, res) => {
   try {
+
+    console.log("User ID from token:", req.id); // Debugging line
+    console.log("Params ID:", req.params.id);
+
+    
     const myAccount = req.id; // My logged in account
     const otherAccount = req.params.id; // Account that i want to follow or unfollow
 
