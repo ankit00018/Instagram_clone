@@ -3,6 +3,7 @@ import { ApiErrors } from "../utils/ApiErrors.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import getDataUri from "../utils/dataUri.js";
+import { Post } from "../models/post.model.js";
 
 const generateAccessTokenAndRefreshToken = async (userid) => {
   try {
