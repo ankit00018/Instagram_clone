@@ -1,6 +1,6 @@
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const sendMessage = asyncHandler(async (req, res) => {
@@ -53,6 +53,5 @@ const getMessage =  asyncHandler ( async (req,res) =>{
         new ApiResponse(201,{messages:conversation?.messages},"")
     )
 })
-
 
 export { sendMessage, getMessage };

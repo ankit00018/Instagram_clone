@@ -76,6 +76,17 @@ const login = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } =
     await generateAccessTokenAndRefreshToken(user._id);
 
+  // populate each post if in the posts array
+  const populatedPosts = await Promise.all(
+    user.post.map(async (postId) => {
+      const post = await Post.findById(postId);
+      if (post.author.equals(user._id)) {
+        return post;
+      }
+      return null;
+    })
+  );
+
   const loggedInUser = {
     _id: user._id,
     username: user.username,
@@ -84,6 +95,7 @@ const login = asyncHandler(async (req, res) => {
     bio: user.bio,
     followers: user.followers,
     following: user.following,
+    post: populatedPosts,
   };
 
   const option = {
