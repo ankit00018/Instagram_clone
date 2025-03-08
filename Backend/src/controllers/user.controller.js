@@ -101,19 +101,15 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-
   if (!req.user || !req.user._id) {
     return res.status(401).json({ message: "User not authenticated" });
   }
 
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: {
-        refreshToken: undefined,
-      },
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: {
+      refreshToken: undefined,
     },
-  );
+  });
 
   const option = {
     httpOnly: true,
@@ -180,10 +176,8 @@ const getSuggestedUsers = asyncHandler(async (req, res) => {
 
 const followOrUnfollow = asyncHandler(async (req, res) => {
   try {
-
     console.log("User ID from token:", req.id); // Debugging line
     console.log("Params ID:", req.params.id);
-
 
     const myAccount = req.id; // My logged in account
     const otherAccount = req.params.id; // Account that i want to follow or unfollow
@@ -239,6 +233,61 @@ const followOrUnfollow = asyncHandler(async (req, res) => {
   }
 });
 
+const deletePost = asyncHandler(async (req, res) => {
+  const postId = req.params.id;
+  const authorId = req.id;
+  const post = await Post.findById(postId);
+  if (!post) {
+    throw new ApiErrors(401, "Post not found");
+  }
+
+  // Check if loggedIn user is owner of the post
+
+  if (post.author.toString() != authorId) {
+    throw new ApiErrors(401, "Unauthorized request");
+  }
+
+  // Delete post
+
+  await Post.findByIdAndDelete(postId);
+
+  // Remove the postId from user's post
+
+  let user = await User.findById(authorId);
+  user.post = user.post.filter((id) => id.toString() != postId);
+  await user.save();
+
+  // Delete associated comments
+  await Comment.deleteMany({ post: postId });
+
+  return res.status(200).json(new ApiResponse(201, "Post deleted"));
+});
+
+const savePost = asyncHandler(async (req, res) => {
+  const postId = req.params.id;
+  const authorId = req.id;
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    throw new ApiErrors(401, "Post not found");
+  }
+  const user = await User.findById(authorId);
+  if (user.bookmarks.includes(post._id)) {
+    // Unsave (remove from bookmark)
+    await user.updateOne({ $pull: { bookmarks: post._id } });
+    await user.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(201, "Post removed from saved"));
+  } else {
+    // Save (add to bookmark)
+    await user.updateOne({ $addToSet: { bookmarks: post._id } });
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(201, "Post saved"));
+  }
+});
 
 export {
   register,
@@ -248,4 +297,6 @@ export {
   editProfile,
   getSuggestedUsers,
   followOrUnfollow,
+  deletePost,
+  savePost,
 };
