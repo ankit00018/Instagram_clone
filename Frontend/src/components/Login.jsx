@@ -5,10 +5,9 @@ import { Button } from "./ui/button";
 import axios from "axios";
 import { toast } from "sonner";
 
-const Signup = () => {
+const Login = () => {
   const [input, setInput] = useState({
     username: "",
-    email: "",
     password: "",
   });
 
@@ -25,7 +24,7 @@ const Signup = () => {
     try {
       setLoading(true);
       const res = await axios.post(
-        "http://localhost:8000/api/v1/users/register",
+        "http://localhost:8000/api/v1/users/login",
         input,
         {
           headers: {
@@ -56,7 +55,7 @@ const Signup = () => {
         <div className="my-4">
           <h1 className="text-center font-bold text-2xl">LOGO</h1>
           <p className="text-sm text-center">
-            Signup for free to access Homebook
+            Login for free to access Homebook
           </p>
         </div>
         <div>
@@ -69,16 +68,7 @@ const Signup = () => {
             className="focus-visible:ring-transparent"
           />
         </div>
-        <div>
-          <Label className="py-2">Email</Label>
-          <Input
-            type="email"
-            name="email"
-            value={input.email}
-            onChange={changeEventHandler}
-            className="focus-visible:ring-transparent"
-          />
-        </div>
+
         <div>
           <Label className="py-2">Password</Label>
           <Input
@@ -90,11 +80,11 @@ const Signup = () => {
           />
         </div>
         <Button type="submit" disabled={loading}>
-         Signup
+         Login
         </Button>
       </form>
     </div>
   );
 };
 
-export default Signup;
+export default Login;

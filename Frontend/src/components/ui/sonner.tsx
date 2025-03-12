@@ -1,5 +1,5 @@
 import { useTheme } from "next-themes"
-import React = require("react")
+import * as React from "react";
 import { Toaster as Sonner, ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
