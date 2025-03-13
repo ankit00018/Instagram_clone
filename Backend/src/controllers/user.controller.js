@@ -50,18 +50,19 @@ const register = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, createdUser, "User register successfully"));
   } catch (error) {
     console.log(error);
+    res.status(500).json(
+      new ApiErrors(500,"Internal server error")
+    )
   }
 });
 
 const login = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
-  if (!(username || password)) {
+  if (!username || !password){
     throw new ApiErrors(401, "Email or Username is required");
   }
 
-  const user = await User.findOne({
-    $or: [{ username: username }, { password: password }],
-  });
+  const user = await User.findOne({ username : username.toLowerCase() });
 
   if (!user) {
     throw new ApiErrors(400, "User not exists");
