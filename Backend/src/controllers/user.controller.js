@@ -38,7 +38,8 @@ const register = asyncHandler(async (req, res) => {
       email,
       password,
     });
-
+    console.log("User created:", user);
+    
     const createdUser = await User.findById(user._id).select("-password");
 
     if (!createdUser) {
