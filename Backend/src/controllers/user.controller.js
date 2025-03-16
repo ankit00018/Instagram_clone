@@ -78,6 +78,9 @@ const login = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } =
     await generateAccessTokenAndRefreshToken(user._id);
 
+    user.refreshToken = refreshToken;
+    await user.save();
+
   // populate each post if in the posts array
   const populatedPosts = await Promise.all(
     user.post.map(async (postId) => {

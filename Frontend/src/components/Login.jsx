@@ -29,7 +29,7 @@ const Login = () => {
       setLoading(true);
       const res = await axios.post(
         "http://localhost:8000/api/v1/users/login",
-        input,
+        input,{withCredentials:true},
         {
           headers: {
             "Content-Type": "application/json",

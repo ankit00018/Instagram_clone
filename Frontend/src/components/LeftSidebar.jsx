@@ -49,6 +49,7 @@ const LeftSidebar = () => {
     }
 
     const sidebarHandler = (textType) =>{
+        console.log("Clicked on:", textType);
         if(textType==='Logout') logoutHandler();
     }
 
