@@ -6,6 +6,8 @@ import axios from "axios";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react"
+import { useDispatch } from "react-redux";
+import { setAuthUser } from "../redux/authSlice";
 
 const Login = () => {
   const [input, setInput] = useState({
@@ -16,6 +18,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  const dispatch = useDispatch();
 
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
@@ -29,7 +33,7 @@ const Login = () => {
       setLoading(true);
       const res = await axios.post(
         "http://localhost:8000/api/v1/users/login",
-        input,{withCredentials:true},
+        input,
         {
           headers: {
             "Content-Type": "application/json",
@@ -38,14 +42,21 @@ const Login = () => {
         }
       );
 
+      console.log("Login Response:", res.data); // Debugging
+
       if (res.data.success) {
+        // localStorage.setItem("token", res.data.accessToken); // Save token
+        dispatch(setAuthUser(res.data.user))
+        console.log("User stored in Redux:", res.data.user);
         navigate("/")
         toast.success(res.data.message);
         setInput({ username: "", email: "", password: "" });
+      }else{
+        toast.error(res.data.message || "Login failed");
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -89,7 +100,7 @@ const Login = () => {
             <Button>
               <Loader2  className="mr-2 w-4 h-4 animate-spin"/> Logging in 
             </Button>
-          ) : ( <Button type="submit">
+          ) : ( <Button type="submit" disabled={loading}>
             Login
            </Button>)
         }
