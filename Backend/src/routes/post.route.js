@@ -15,7 +15,7 @@ import {
 
 const router = express.Router();
 
-router.route("/addpost").post(verifyJWT, upload.single("image"), addNewPost);
+router.route("/addpost").post(upload.single("image"),verifyJWT,addNewPost);
 router.route("/getpost").get(verifyJWT, getAllPostOnFeed);
 router.route("/userpost/getpost").get(verifyJWT, getUserPost);
 router.route("/:id/like").get(verifyJWT, likePost);

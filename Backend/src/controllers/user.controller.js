@@ -116,8 +116,8 @@ const login = asyncHandler(async (req, res) => {
 
   const option = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // ✅ Only secure in production
-    sameSite: "lax",
+    secure: false,
+    sameSite: "None",
     maxAge: 24 * 60 * 60 * 1000,
   };
 
@@ -129,7 +129,6 @@ const login = asyncHandler(async (req, res) => {
       user : loggedInUser,accessToken,refreshToken,
     }, "User loggedIn Successfully"));
 
-console.log("After setting cookies, response headers:", res.getHeaders());
 }
 );
 

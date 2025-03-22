@@ -5,41 +5,69 @@ import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Comment } from "../models/comment.model.js";
+import cloudinary from "../utils/cloudinary.js";
 
 const addNewPost = asyncHandler(async (req, res) => {
-  const caption = req.body;
-  const image = req.file;
-  const authorId = req.id;
+  try {
+    const { caption } = req.body;
+    const image = req.file;
+    const authorId = req.user._id;
 
-  if (!image) {
-    throw new ApiErrors(400, "Image required");
+    if (!image) {
+      throw new ApiErrors(400, "Image required");
+    }
+
+    // Check if image buffer is valid
+    if (!image.buffer) {
+      throw new ApiErrors(400, "Invalid image file");
+    }
+
+    // Process image with Sharp
+    let optimizedImageBuffer;
+    try {
+      optimizedImageBuffer = await sharp(image.buffer)
+        .resize({ width: 800, height: 800, fit: "inside" })
+        .toFormat("jpeg", { quality: 80 })
+        .toBuffer();
+    } catch (sharpError) {
+      throw new ApiErrors(
+        400,
+        "Image processing failed: " + sharpError.message
+      );
+    }
+
+    // Upload to Cloudinary
+    let cloudResponse;
+    try {
+      const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString("base64")}`;
+      cloudResponse = await cloudinary.uploader.upload(fileUri);
+    } catch (cloudinaryError) {
+      throw new ApiErrors(
+        500,
+        "Cloudinary upload failed: " + cloudinaryError.message
+      );
+    }
+
+    const post = await Post.create({
+      caption: caption || "",
+      image: cloudResponse.secure_url,
+      author: authorId,
+    });
+
+    const user = await User.findById(authorId);
+    if (!user) {
+      throw new ApiErrors(404, "User not found");
+    }else {
+      user.post.push(post._id);
+      await user.save();
+    }
+
+    await post.populate({ path: "author", select: "-password" });
+
+    return res.status(200).json(new ApiResponse(201, post, "New post added"));
+  } catch (error) {
+    throw new ApiErrors(500, error.message || "Failed to create post");
   }
-
-  const optimizedImageBuffer = await sharp(image.buffer)
-    .resize({ width: 800, height: 800, fit: "inside" })
-    .toFormat("jpeg", { quality: 80 })
-    .toBuffer();
-
-  // Buffer to data uri
-
-  const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString("base64")}`;
-  const cloudResponse = await cloudinary.uploader.upload(fileUri);
-
-  const post = await Post.create({
-    caption,
-    image: cloudResponse.secure_url,
-    author: authorId,
-  });
-
-  const user = await User.findById(authorId);
-  if (user) {
-    user.post.push(post._id);
-    await user.save();
-  }
-
-  await post.populate({ path: "author", select: "-password" });
-
-  return res.status(200).json(new ApiResponse(201, post, "New post added"));
 });
 
 const getAllPostOnFeed = asyncHandler(async (req, res) => {

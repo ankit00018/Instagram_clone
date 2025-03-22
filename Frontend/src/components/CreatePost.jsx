@@ -35,27 +35,10 @@ const CreatePost = ({ open, setOpen }) => {
     try {
       setLoading(true);
 
-      // Retrieve token
-
-      const token = Cookies.get("accessToken");
-      
-      console.log("🔍 All Cookies:", document.cookie);
-      console.log("🔍 Cookies.get('accessToken'):", Cookies.get("accessToken"));
-      console.log("Token in frontend:", token); // Debugging
-
-      if (!token) {
-        toast.error("Authentication token missing. Please log in again.");
-        return;
-      }
-
       const res = await axios.post(
         "http://localhost:8000/api/v1/post/addpost",
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${Cookies.get("accessToken")}`,
-          },
           withCredentials: true,
         }
       );
