@@ -38,11 +38,13 @@ const Login = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: true,
+          withCredentials: true, // ✅ This ensures cookies are included
         }
       );
 
-      console.log("Login Response:", res.data); // Debugging
+      console.log("Login Response:", res);
+      console.log("Response Headers:", res.headers);
+      console.log("Set-Cookie Header:", res.headers["set-cookie"]);
 
       if (res.data.success) {
         // localStorage.setItem("token", res.data.accessToken); // Save token

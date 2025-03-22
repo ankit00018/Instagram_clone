@@ -26,6 +26,9 @@ const LeftSidebar = () => {
   const logoutHandler = async () => {
     try {
       const res = await axios.get("http://localhost:8000/api/v1/users/logout", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         withCredentials: true,
       });
       if (res.data.success) {

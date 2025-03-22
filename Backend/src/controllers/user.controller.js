@@ -11,9 +11,18 @@ const generateAccessTokenAndRefreshToken = async (userid) => {
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
+    console.log("Generated Access Token:", accessToken);
+    console.log("Generated Refresh Token:", refreshToken);
+
     user.refreshToken = refreshToken;
 
     await user.save({ validateBeforeSave: false });
+
+     // Fetch again from DB to verify
+     const updatedUser = await User.findById(userid);
+     console.log("User after saving refreshToken:", updatedUser);
+
+
     return { accessToken, refreshToken };
   } catch (error) {
     throw new ApiErrors(500, "Something went wrong while generating Token");
@@ -103,19 +112,26 @@ const login = asyncHandler(async (req, res) => {
     post: populatedPosts,
   };
 
+  console.log("Before setting cookies, request cookies:", req.cookies);
+
   const option = {
     httpOnly: true,
-    secure: true,
-    samSite: "strict",
-    maxAge: 1 * 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === "production", // ✅ Only secure in production
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000,
   };
 
   return res
-    .status(200)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
-    .json(new ApiResponse(200, loggedInUser, "User loggedIn Successfully"));
-});
+    .status(200)
+    .json(new ApiResponse(200, {
+      user : loggedInUser,accessToken,refreshToken,
+    }, "User loggedIn Successfully"));
+
+console.log("After setting cookies, response headers:", res.getHeaders());
+}
+);
 
 const logout = asyncHandler(async (req, res) => {
   if (!req.user || !req.user._id) {
@@ -128,6 +144,8 @@ const logout = asyncHandler(async (req, res) => {
     },
   });
 
+  console.log("Cookies before logout:", req.cookies);
+
   const option = {
     httpOnly: true,
     secure: true,
@@ -139,6 +157,8 @@ const logout = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", option)
     .clearCookie("refreshToken", option)
     .json(new ApiResponse(200, {}, "User logged out"));
+
+    res.json({headers:res.getHeaders()})
 });
 
 const getProfile = asyncHandler(async (req, res) => {

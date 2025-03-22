@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import readFileAsDataURL from "../lib/utils";
 import { toast } from "sonner";
 import axios from "axios";
-import { Form } from "react-router-dom";
+import Cookies from "js-cookie"; // Import the package
 
 const CreatePost = ({ open, setOpen }) => {
   const imageRef = useRef();
@@ -27,6 +27,7 @@ const CreatePost = ({ open, setOpen }) => {
   };
 
   const createPostHandler = async (e) => {
+    e.preventDefault(); // Prevent page reload
     const formData = new FormData();
     formData.append("caption", caption);
     if (imagePreview) formData.append("image", file);
@@ -35,8 +36,11 @@ const CreatePost = ({ open, setOpen }) => {
       setLoading(true);
 
       // Retrieve token
-      const token = localStorage.getItem("token"); // If using cookies, check cookies instead
 
+      const token = Cookies.get("accessToken");
+      
+      console.log("🔍 All Cookies:", document.cookie);
+      console.log("🔍 Cookies.get('accessToken'):", Cookies.get("accessToken"));
       console.log("Token in frontend:", token); // Debugging
 
       if (!token) {
@@ -50,7 +54,7 @@ const CreatePost = ({ open, setOpen }) => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${Cookies.get("accessToken")}`,
           },
           withCredentials: true,
         }
