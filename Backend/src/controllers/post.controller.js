@@ -71,27 +71,44 @@ const addNewPost = asyncHandler(async (req, res) => {
 });
 
 const getAllPostOnFeed = asyncHandler(async (req, res) => {
-  const posts = await Post.find()
-    .sort({ creatrdAt: -1 })
-    .populate({ path: "author", select: "username,profilePicture" })
-    .populate({
-      path: "comment",
-      sort: { createdAt: -1 },
-      populate: { path: "author", select: "username,profilePicture" },
-    });
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 })
+        .populate({ path: 'author', select: 'username profilePicture' })
+        .populate({
+            path: 'comments',
+            sort: { createdAt: -1 },
+            populate: {
+                path: 'author',
+                select: 'username profilePicture'
+            }
+        });
 
-  return res.status(200).json(new ApiResponse(201, posts, "All post fetched"));
-});
+    return res.status(200).json(
+      new ApiResponse(200, posts , "Posts fetched successfully")
+    )
+    
+  } catch (error) {
+    throw new ApiErrors(
+      500,
+      "Failed to fetch posts",
+      // Include detailed error info
+      { 
+        error: error.message,
+        stack: error.stack 
+      }
+    )
+  }
+})
 
 const getUserPost = asyncHandler(async (req, res) => {
   const authorId = req.id;
   const posts = await Post.find({ author: authorId })
     .sort({ createdAt: -1 })
-    .populate({ path: "author", select: "username,profilePicture" })
+    .populate({ path: "author", select: "username profilePicture" })
     .populate(
       { path: "comment", sort: { createdAt: -1 } }.populate({
         path: "author",
-        select: "username,profilePicture",
+        select: "username profilePicture",
       })
     );
 

@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import store from "../redux/store.js";
 import { setAuthUser } from "../redux/authSlice.js";
 import CreatePost from "./CreatePost.jsx";
 
@@ -25,16 +24,17 @@ const LeftSidebar = () => {
 
   const logoutHandler = async () => {
     try {
+      const token = user?.token || localStorage.getItem("token"); 
       const res = await axios.get("http://localhost:8000/api/v1/users/logout", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         withCredentials: true,
       });
-      if (res.data.success) {
+      if (res.data?.success) {
         dispatch(setAuthUser(null));
-        navigate("/login");
         toast.success(res.data.message);
+        navigate("/login");
       }
     } catch (error) {
       toast.error(error.response.data.message);

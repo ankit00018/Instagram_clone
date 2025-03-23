@@ -16,7 +16,6 @@ const Signup = () => {
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  
 
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
@@ -32,21 +31,32 @@ const Signup = () => {
         "http://localhost:8000/api/v1/users/register",
         input,
         {
+          
+          withCredentials: true,
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: true,
         }
       );
 
       if (res.data.success) {
-        navigate("/login")
+        navigate("/login");
         toast.success(res.data.message);
         setInput({ username: "", email: "", password: "" });
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
+      // Improved error handling
+      if (error.response) {
+        // Server responded with error status (4xx/5xx)
+        toast.error(error.response.data.message || "Signup failed");
+      } else if (error.request) {
+        // Request made but no response received
+        toast.error("Network error - please check your connection");
+      } else {
+        // Other errors
+        toast.error(error.response.data.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -94,16 +104,20 @@ const Signup = () => {
             className="focus-visible:ring-transparent"
           />
         </div>
-        {
-          loading ? (
-            <Button>
-              <Loader2  className="mr-2 w-4 h-4 animate-spin"/> Logging in 
-            </Button>
-          ) : ( <Button type="submit">
-            Signup
-           </Button>)
-        }
-        <span className="text-center">Already have an account? <Link to="/login" className="text-blue-700">Login</Link></span>
+        {loading ? (
+          <Button disabled>
+            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+            Signing up... {/* Changed from "Logging in" */}
+          </Button>
+        ) : (
+          <Button type="submit">Signup</Button>
+        )}
+        <span className="text-center">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-700">
+            Login
+          </Link>
+        </span>
       </form>
     </div>
   );
