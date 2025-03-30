@@ -1,5 +1,6 @@
 import {
   Heart,
+  House,
   Home,
   LogOut,
   MessageCircle,
@@ -15,20 +16,22 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "../redux/authSlice.js";
 import CreatePost from "./CreatePost.jsx";
+import CreateListing from "./CreateListing.jsx";
 
 const LeftSidebar = () => {
   const navigate = useNavigate();
   const { user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
+  const [openListing, setOpenListing] = useState(false);
 
   const logoutHandler = async () => {
     try {
-      const token = user?.token || localStorage.getItem("token"); 
+      const token = user?.token || localStorage.getItem("token");
       const res = await axios.get("http://localhost:8000/api/v1/users/logout", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         withCredentials: true,
       });
       if (res.data?.success) {
@@ -47,6 +50,10 @@ const LeftSidebar = () => {
       logoutHandler();
     } else if (textType === "Create") {
       setOpen(true);
+    } else if (textType === "Trending") {
+      navigate("/property");
+    } else if (textType === "Add Listing") {
+      setOpenListing(true);
     }
   };
 
@@ -54,6 +61,7 @@ const LeftSidebar = () => {
     { icon: <Home />, text: "Home" },
     { icon: <Search />, text: "Search" },
     { icon: <TrendingUp />, text: "Trending" },
+    { icon: <House />, text: "Add Listing" },
     { icon: <MessageCircle />, text: "Messages" },
     { icon: <Heart />, text: "Notification" },
     { icon: <PlusSquare />, text: "Create" },
@@ -70,28 +78,24 @@ const LeftSidebar = () => {
   ];
 
   return (
-    <div className="fixed top-0 z-10 left-0 px-4 border-r border-gray-400 w-[16%] h-screen">
-      <div className="flex flex-col">
-        <h1 className="my-8 pl-3 font-bold text-xl">LOGO</h1>
-        <div>
+    <div className="fixed left-0 top-0 h-screen w-[20%] bg-black p-4">
+      <div className="text-2xl font-bold text-white mb-8">HomeBook</div>
+        <div className="space-y-4"> 
           {sidebarIcons.map((item, index) => {
             return (
               <div
                 onClick={() => sidebarHandler(item.text)}
                 key={index}
-                className="flex items-center gap-3 relative hover:bg-gray-100 cursor-pointer rounded-l-lg p-3 my-3"
-              >
+                className="flex items-center gap-3 p-2 text-white hover:bg-[#d037a2]/20 rounded-lg transition-colors"
+          >
                 {item.icon}
                 <span>{item.text}</span>
               </div>
             );
           })}
         </div>
-      </div>
-
-          <CreatePost open={open} setOpen={setOpen} />
-
-
+      {open && <CreatePost open={open} setOpen={setOpen} />}
+      {openListing && <CreateListing open={openListing} setOpen={setOpenListing} />}
     </div>
   );
 };

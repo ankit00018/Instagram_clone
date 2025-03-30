@@ -11,7 +11,7 @@ const addNewPost = asyncHandler(async (req, res) => {
   try {
     const { caption } = req.body;
     const image = req.file;
-    const authorId = req.user._id;
+    const authorId = req.id;
 
     if (!image) {
       throw new ApiErrors(400, "Image required");
@@ -64,7 +64,7 @@ const addNewPost = asyncHandler(async (req, res) => {
 
     await post.populate({ path: "author", select: "-password" });
 
-    return res.status(200).json(new ApiResponse(201, post, "New post added"));
+    return res.status(200).json(new ApiResponse(201, {post}, "New post added"));
   } catch (error) {
     throw new ApiErrors(500, error.message || "Failed to create post");
   }
@@ -170,15 +170,15 @@ const addComment = asyncHandler(async (req, res) => {
     post: postId,
   }).populate({
     path: "author",
-    select: "username, profilePicture",
+    select: "username profilePicture",
   });
 
-  post.comment.push(comment._id);
+  post.comments.push(comment._id);
   await post.save();
 
   return res
     .status(200)
-    .json(new ApiResponse(201, comment, "Comment published"));
+    .json(new ApiResponse(201, {comment}, "Comment published"));
 });
 
 const getCommentsOfPost = asyncHandler(async (req, res) => {
@@ -195,7 +195,7 @@ const getCommentsOfPost = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(201, comments, "All comments fetched"));
+    .json(new ApiResponse(201, {comments}, "All comments fetched"));
 });
 
 const deletePost = asyncHandler(async (req, res) => {

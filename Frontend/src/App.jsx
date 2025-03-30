@@ -4,6 +4,7 @@ import Login from "./components/Login";
 import MainLayout from "./components/MainLayout";
 import Profile from "./components/Profile";
 import Signup from "./components/Signup";
+import DisplayProp from "./components/DisplayProp"
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 
 const router = createBrowserRouter([
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
         path:"/profile",
         element:<Profile />
 
+      },
+      {
+        path:"/property",
+        element:<DisplayProp />
       }
     ]
   },
@@ -29,7 +34,8 @@ const router = createBrowserRouter([
   {
     path:"/signup",
     element:<Signup />
-  }
+  },
+  
 ])
 
 

@@ -9,21 +9,16 @@ const generateAccessTokenAndRefreshToken = async (userid) => {
   try {
     const user = await User.findById(userid);
     const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
 
     console.log("Generated Access Token:", accessToken);
-    console.log("Generated Refresh Token:", refreshToken);
-
-    user.refreshToken = refreshToken;
 
     await user.save({ validateBeforeSave: false });
 
-     // Fetch again from DB to verify
-     const updatedUser = await User.findById(userid);
-     console.log("User after saving refreshToken:", updatedUser);
+    // Fetch again from DB to verify
+    const updatedUser = await User.findById(userid);
+    console.log("User after saving refreshToken:", updatedUser);
 
-
-    return { accessToken, refreshToken };
+    return { accessToken };
   } catch (error) {
     throw new ApiErrors(500, "Something went wrong while generating Token");
   }
@@ -48,7 +43,7 @@ const register = asyncHandler(async (req, res) => {
       password,
     });
     console.log("User created:", user);
-    
+
     const createdUser = await User.findById(user._id).select("-password");
 
     if (!createdUser) {
@@ -60,19 +55,17 @@ const register = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, createdUser, "User register successfully"));
   } catch (error) {
     console.log(error);
-    res.status(500).json(
-      new ApiErrors(500,"Internal server error")
-    )
+    res.status(500).json(new ApiErrors(500, "Internal server error"));
   }
 });
 
 const login = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password){
+  if (!username || !password) {
     throw new ApiErrors(401, "Email or Username is required");
   }
 
-  const user = await User.findOne({ username : username.toLowerCase() });
+  const user = await User.findOne({ username: username.toLowerCase() });
 
   if (!user) {
     throw new ApiErrors(400, "User not exists");
@@ -84,11 +77,9 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiErrors(401, "Invalid user credentials");
   }
 
-  const { accessToken, refreshToken } =
-    await generateAccessTokenAndRefreshToken(user._id);
+  const { accessToken } = await generateAccessTokenAndRefreshToken(user._id);
 
-    user.refreshToken = refreshToken;
-    await user.save();
+  await user.save();
 
   // populate each post if in the posts array
   const populatedPosts = await Promise.all(
@@ -123,25 +114,23 @@ const login = asyncHandler(async (req, res) => {
 
   return res
     .cookie("accessToken", accessToken, option)
-    .cookie("refreshToken", refreshToken, option)
     .status(200)
-    .json(new ApiResponse(200, {
-      user : loggedInUser,accessToken,refreshToken,
-    }, "User loggedIn Successfully"));
-
-}
-);
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser,
+          accessToken,
+        },
+        "User loggedIn Successfully"
+      )
+    );
+});
 
 const logout = asyncHandler(async (req, res) => {
   if (!req.user || !req.user._id) {
     return res.status(401).json({ message: "User not authenticated" });
   }
-
-  await User.findByIdAndUpdate(req.user._id, {
-    $set: {
-      refreshToken: undefined,
-    },
-  });
 
   console.log("Cookies before logout:", req.cookies);
 
@@ -154,10 +143,7 @@ const logout = asyncHandler(async (req, res) => {
   res
     .status(200)
     .clearCookie("accessToken", option)
-    .clearCookie("refreshToken", option)
     .json(new ApiResponse(200, {}, "User logged out"));
-
-    res.json({headers:res.getHeaders()})
 });
 
 const getProfile = asyncHandler(async (req, res) => {
@@ -170,7 +156,7 @@ const getProfile = asyncHandler(async (req, res) => {
 
 const editProfile = asyncHandler(async (req, res) => {
   try {
-    const userId = req.user;
+    const userId = req.id;
     const { bio, gender } = req.body;
     const profilePicture = req.file;
 
@@ -269,62 +255,6 @@ const followOrUnfollow = asyncHandler(async (req, res) => {
   }
 });
 
-const deletePost = asyncHandler(async (req, res) => {
-  const postId = req.params.id;
-  const authorId = req.id;
-  const post = await Post.findById(postId);
-  if (!post) {
-    throw new ApiErrors(401, "Post not found");
-  }
-
-  // Check if loggedIn user is owner of the post
-
-  if (post.author.toString() != authorId) {
-    throw new ApiErrors(401, "Unauthorized request");
-  }
-
-  // Delete post
-
-  await Post.findByIdAndDelete(postId);
-
-  // Remove the postId from user's post
-
-  let user = await User.findById(authorId);
-  user.post = user.post.filter((id) => id.toString() != postId);
-  await user.save();
-
-  // Delete associated comments
-  await Comment.deleteMany({ post: postId });
-
-  return res.status(200).json(new ApiResponse(201, "Post deleted"));
-});
-
-const savePost = asyncHandler(async (req, res) => {
-  const postId = req.params.id;
-  const authorId = req.id;
-  const post = await Post.findById(postId);
-
-  if (!post) {
-    throw new ApiErrors(401, "Post not found");
-  }
-  const user = await User.findById(authorId);
-  if (user.bookmarks.includes(post._id)) {
-    // Unsave (remove from bookmark)
-    await user.updateOne({ $pull: { bookmarks: post._id } });
-    await user.save();
-
-    return res
-      .status(200)
-      .json(new ApiResponse(201, "Post removed from saved"));
-  } else {
-    // Save (add to bookmark)
-    await user.updateOne({ $addToSet: { bookmarks: post._id } });
-    await user.save();
-
-    return res.status(200).json(new ApiResponse(201, "Post saved"));
-  }
-});
-
 export {
   register,
   login,
@@ -333,6 +263,4 @@ export {
   editProfile,
   getSuggestedUsers,
   followOrUnfollow,
-  deletePost,
-  savePost,
 };
